@@ -1,1 +1,1066 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Snake Royale - Slither Edition Mobile</title>                                            
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#090d16',
+                        panelBg: '#121929',
+                        neonGreen: '#00ffcc',
+                        neonPink: '#ff007f',
+                        neonPurple: '#9d00ff'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090d16;
+            color: #f3f4f6;
+            overflow: hidden;
+            touch-action: none;
+        }
+        .arcade-font {
+            font-family: 'Press Start 2P', monospace;
+        }
+        .neon-glow {
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.25);
+        }
+        .neon-glow-pink {
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.25);
+        }
+        canvas {
+            background: radial-gradient(circle at center, #101728 0%, #050811 100%);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 255, 204, 0.04);
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-2 sm:p-5 select-none">
 
+    <!-- Header -->
+    <header class="w-full max-w-5xl flex items-center justify-between py-2 px-4 bg-panelBg/85 backdrop-blur-md rounded-2xl border border-gray-800 shadow-xl mb-2">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-neonGreen to-neonPurple flex items-center justify-center shadow-lg neon-glow">
+                <i class="fa-solid fa-worm text-darkBg text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xs sm:text-lg font-extrabold tracking-wider bg-gradient-to-r from-neonGreen via-cyan-400 to-neonPink bg-clip-text text-transparent arcade-font">SNAKE ROYALE</h1>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-2 sm:space-x-3">
+            <div class="bg-gray-900/80 px-3 py-1.5 rounded-xl border border-gray-800 flex items-center space-x-2">
+                <i class="fa-solid fa-trophy text-yellow-400 text-sm"></i>
+                <div class="flex flex-col">
+                    <span class="text-[9px] text-gray-400 uppercase font-semibold">Recorde</span>
+                    <span id="headerHighScore" class="text-xs sm:text-sm font-bold text-yellow-400">0</span>
+                </div>
+            </div>
+            <button onclick="openModal('shopModal')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-3 py-2 rounded-xl font-bold text-xs flex items-center space-x-1.5 shadow-lg transition transform active:scale-95">
+                <i class="fa-solid fa-shirt"></i>
+                <span class="hidden sm:inline">Loja</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Arena -->
+    <main class="w-full max-w-5xl flex-1 flex flex-col items-center justify-center relative">
+        
+        <div id="gameContainer" class="relative rounded-2xl overflow-hidden border-2 border-gray-800 neon-glow flex items-center justify-center w-full">
+            
+            <!-- Canvas -->
+            <canvas id="gameCanvas" width="900" height="600" class="w-full h-auto max-w-full max-h-[75vh] object-contain"></canvas>
+
+            <!-- Start Menu Overlay -->
+            <div id="startScreen" class="absolute inset-0 bg-darkBg/92 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-20 overflow-y-auto">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-neonGreen to-neonPurple flex items-center justify-center mb-3 neon-glow animate-bounce">
+                    <i class="fa-solid fa-worm text-darkBg text-3xl sm:text-4xl"></i>
+                </div>
+                
+                <h2 class="text-xl sm:text-3xl font-black mb-4 arcade-font bg-gradient-to-r from-neonGreen to-neonPink bg-clip-text text-transparent">SNAKE ROYALE</h2>
+                
+                <!-- Nickname Input Box -->
+                <div class="w-full max-w-xs mb-3">
+                    <label class="block text-left text-xs font-semibold text-gray-400 mb-1">Seu Apelido (Nickname):</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" id="playerNickInput" maxlength="15" value="Player" class="w-full bg-panelBg border border-gray-700 rounded-xl py-2 pl-10 pr-3 text-sm text-white focus:outline-none focus:border-neonGreen transition font-bold text-center">
+                    </div>
+                </div>
+
+                <!-- Seleção de Dificuldade -->
+                <div class="w-full max-w-xs mb-5">
+                    <label class="block text-left text-xs font-semibold text-gray-400 mb-2">Dificuldade dos Bots:</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" id="btnDiffEasy" class="diff-btn py-2 px-2 bg-emerald-900/80 border-2 border-emerald-400 text-emerald-300 font-bold text-xs rounded-xl shadow-md transition">
+                            Fácil
+                        </button>
+                        <button type="button" id="btnDiffMedium" class="diff-btn py-2 px-2 bg-panelBg border border-gray-700 text-gray-400 font-bold text-xs rounded-xl transition hover:border-gray-500">
+                            Médio
+                        </button>
+                        <button type="button" id="btnDiffHard" class="diff-btn py-2 px-2 bg-panelBg border border-gray-700 text-gray-400 font-bold text-xs rounded-xl transition hover:border-gray-500">
+                            Difícil
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                    <button onclick="startGame()" class="flex-1 bg-gradient-to-r from-neonGreen to-emerald-600 hover:from-emerald-400 text-darkBg font-extrabold py-3 px-6 rounded-xl shadow-lg transition transform active:scale-95 text-xs uppercase tracking-wider flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Entrar na Arena</span>
+                    </button>
+                    <button onclick="openModal('shopModal')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-xl border border-gray-700 shadow-lg transition transform active:scale-95 text-xs flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-store"></i>
+                        <span>Skins</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game Over Overlay -->
+            <div id="gameOverScreen" class="absolute inset-0 bg-darkBg/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-20 hidden">
+                <div class="w-16 h-16 rounded-2xl bg-red-500/20 border border-red-500 flex items-center justify-center mb-3 neon-glow-pink">
+                    <i class="fa-solid fa-skull-crossbones text-red-500 text-3xl"></i>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-black text-red-500 arcade-font mb-2">FIM DE JOGO</h2>
+                <p id="gameOverReason" class="text-gray-400 text-xs sm:text-sm mb-4">Você morreu!</p>
+                
+                <div class="bg-panelBg border border-gray-800 rounded-xl p-3 w-full max-w-xs mb-5 flex justify-around">
+                    <div>
+                        <span class="text-[9px] text-gray-400 block uppercase">Tamanho Final</span>
+                        <span id="finalScore" class="text-lg font-bold text-neonGreen">0</span>
+                    </div>
+                    <div class="w-px bg-gray-800"></div>
+                    <div>
+                        <span class="text-[9px] text-gray-400 block uppercase">Comidinhas</span>
+                        <span id="finalFood" class="text-lg font-bold text-cyan-400">0</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 w-full max-w-xs">
+                    <button onclick="startGame()" class="flex-1 bg-gradient-to-r from-neonGreen to-emerald-600 hover:from-emerald-400 text-darkBg font-bold py-3 px-4 rounded-xl shadow-lg transition transform active:scale-95 text-xs uppercase flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>Jogar de Novo</span>
+                    </button>
+                    <button onclick="returnToMenu()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-xl border border-gray-700 shadow-lg transition transform active:scale-95 text-xs flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-house"></i>
+                        <span>Menu</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- In-game HUD -->
+            <div id="inGameHud" class="absolute top-3 left-3 right-3 flex justify-between items-center pointer-events-none z-10 hidden">
+                <div class="bg-gray-900/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-800/80 flex items-center space-x-3 text-xs">
+                    <div><span class="text-gray-400">Tamanho:</span> <span id="currentScore" class="font-bold text-neonGreen">10</span></div>
+                    <div class="w-px h-3 bg-gray-700"></div>
+                    <div><span class="text-gray-400">Rivais:</span> <span id="aliveBots" class="font-bold text-neonPink">6</span></div>
+                    <div class="w-px h-3 bg-gray-700"></div>
+                    <div><span class="text-gray-400">Modo:</span> <span id="hudDifficulty" class="font-bold text-yellow-400 uppercase">FÁCIL</span></div>
+                </div>
+                <button onclick="pauseGame()" class="pointer-events-auto bg-gray-900/85 hover:bg-gray-800 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-800 text-xs font-bold flex items-center space-x-1.5 transition">
+                    <i class="fa-solid fa-pause"></i>
+                    <span>Pausar</span>
+                </button>
+            </div>
+
+            <!-- CONTROLES MOBILE -->
+            <!-- Joystick Virtual (Canto Inferior Esquerdo) -->
+            <div id="joystickZone" class="absolute bottom-4 left-4 w-28 h-28 bg-white/5 border-2 border-white/20 rounded-full z-10 hidden touch-none flex items-center justify-center">
+                <div id="joystickKnob" class="w-10 h-10 bg-neonGreen/80 rounded-full shadow-lg transform transition-transform duration-75"></div>
+            </div>
+
+            <!-- Botão de Turbo (Canto Inferior Direito) -->
+            <button id="mobileBoostBtn" class="absolute bottom-5 right-5 z-10 w-20 h-20 bg-gradient-to-tr from-neonPink to-purple-600 text-white rounded-full flex flex-col items-center justify-center shadow-2xl active:scale-90 transition font-black border-2 border-white/20 select-none hidden touch-none">
+                <i class="fa-solid fa-bolt text-xl"></i>
+                <span class="text-[9px] uppercase tracking-wider font-extrabold mt-0.5">TURBO</span>
+            </button>
+
+        </div>
+
+    </main>
+
+    <!-- Skins & Shop Modal -->
+    <div id="shopModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-panelBg border border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between pb-4 border-b border-gray-800">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-shirt text-purple-400 text-lg"></i>
+                    <h3 class="font-extrabold text-base arcade-font">Loja de Skins</h3>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gray-900 px-3 py-1 rounded-xl border border-gray-800 flex items-center space-x-1.5 text-xs">
+                        <i class="fa-solid fa-star text-yellow-400"></i>
+                        <span id="playerCoins" class="font-bold text-yellow-400">120</span>
+                    </div>
+                    <button onclick="closeModal('shopModal')" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="py-3 border-b border-gray-800/60 flex items-center space-x-3">
+                <div class="flex-1">
+                    <label class="block text-[11px] text-gray-400 mb-1 font-semibold">Editar Apelido:</label>
+                    <input type="text" id="shopNickInput" maxlength="15" oninput="updateNicknameFromShop(this.value)" class="w-full bg-gray-900 border border-gray-700 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-neonGreen font-bold">
+                </div>
+            </div>
+
+            <div id="skinsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 py-4 overflow-y-auto flex-1 pr-1"></div>
+
+            <div class="pt-4 border-t border-gray-800 flex justify-end">
+                <button onclick="closeModal('shopModal')" class="bg-gray-800 hover:bg-gray-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs transition">
+                    Concluído
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pause Modal -->
+    <div id="pauseModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-panelBg border border-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center">
+            <h3 class="font-extrabold text-lg arcade-font mb-4 text-cyan-400">JOGO PAUSADO</h3>
+            <div class="space-y-3">
+                <button onclick="resumeGame()" class="w-full bg-gradient-to-r from-neonGreen to-emerald-600 hover:from-emerald-400 text-darkBg font-bold py-3 rounded-xl shadow-lg transition text-xs">
+                    Continuar
+                </button>
+                <button onclick="returnToMenu()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl border border-gray-700 transition text-xs">
+                    Voltar ao Menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Game Engine -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const WORLD_WIDTH = 2400;
+        const WORLD_HEIGHT = 1600;
+
+        let gameInterval = null;
+        let gameRunning = false;
+        let gamePaused = false;
+        let score = 10;
+        let foodEatenCount = 0;
+        let selectedDifficulty = 'easy';
+        let highScore = parseInt(localStorage.getItem('snake_slither_highscore') || '10');
+        let coins = parseInt(localStorage.getItem('snake_slither_coins') || '150');
+        let currentSkinId = localStorage.getItem('snake_slither_skin') || 'neon_cyan';
+        let playerNickname = localStorage.getItem('snake_slither_nick') || 'Player';
+
+        document.getElementById('headerHighScore').innerText = highScore;
+        document.getElementById('playerCoins').innerText = coins;
+        document.getElementById('playerNickInput').value = playerNickname;
+        document.getElementById('shopNickInput').value = playerNickname;
+
+        let player = null;
+        let bots = [];
+        let foods = [];
+        let particles = [];
+        let camera = { x: 0, y: 0 };
+        let mousePos = { x: canvas.width / 2, y: canvas.height / 2 };
+        let keysPressed = {};
+        let isMouseDown = false;
+        let isTouchBoosting = false;
+
+        const skins = [
+            { id: 'neon_cyan', name: 'Cyber Neon', color: '#00ffcc', headColor: '#ffffff', type: 'solid', price: 0, unlocked: true },
+            { id: 'neon_pink', name: 'Hot Magenta', color: '#ff007f', headColor: '#ff99cc', type: 'solid', price: 60, unlocked: false },
+            { id: 'gold_king', name: 'Rei Dourado', color: '#ffd700', headColor: '#ffea75', type: 'solid', price: 150, unlocked: false },
+            { id: 'toxic_slime', name: 'Lodo Tóxico', color: '#39ff14', headColor: '#bfff80', type: 'solid', price: 200, unlocked: false },
+            { id: 'flag_brasil', name: '🇧🇷 Brasil', type: 'flag_bra', colors: ['#009c3b', '#ffdf00', '#002776'], headColor: '#009c3b', price: 100, unlocked: false },
+            { id: 'flag_usa', name: '🇺🇸 EUA', type: 'flag_usa', colors: ['#b22234', '#ffffff', '#3c3b6e'], headColor: '#3c3b6e', price: 120, unlocked: false },
+            { id: 'flag_japan', name: '🇯🇵 Japão', type: 'flag_jpn', colors: ['#ffffff', '#bc002d'], headColor: '#ffffff', price: 120, unlocked: false },
+            { id: 'flag_germany', name: '🇩🇪 Alemanha', type: 'flag_ger', colors: ['#000000', '#dd0000', '#ffcc00'], headColor: '#000000', price: 140, unlocked: false }
+        ];
+
+        try {
+            const savedSkins = JSON.parse(localStorage.getItem('snake_slither_unlocked'));
+            if (savedSkins) {
+                skins.forEach(s => { if (savedSkins.includes(s.id)) s.unlocked = true; });
+            }
+        } catch(e) {}
+
+        const botNames = ["Viper", "Shadow", "CyberBot", "Venom", "Blaze", "Titan", "Ghost", "Apex", "Matrix", "NeonStalker"];
+
+        function setDifficulty(diff) {
+            selectedDifficulty = diff;
+
+            const btnEasy = document.getElementById('btnDiffEasy');
+            const btnMedium = document.getElementById('btnDiffMedium');
+            const btnHard = document.getElementById('btnDiffHard');
+
+            const inactiveStyle = "bg-panelBg border-gray-700 text-gray-400 font-bold border";
+            btnEasy.className = `diff-btn py-2 px-2 text-xs rounded-xl transition ${inactiveStyle}`;
+            btnMedium.className = `diff-btn py-2 px-2 text-xs rounded-xl transition ${inactiveStyle}`;
+            btnHard.className = `diff-btn py-2 px-2 text-xs rounded-xl transition ${inactiveStyle}`;
+
+            if (diff === 'easy') {
+                btnEasy.className = "diff-btn py-2 px-2 bg-emerald-900/80 border-2 border-emerald-400 text-emerald-300 font-bold text-xs rounded-xl shadow-md transition";
+            } else if (diff === 'medium') {
+                btnMedium.className = "diff-btn py-2 px-2 bg-yellow-900/80 border-2 border-yellow-400 text-yellow-300 font-bold text-xs rounded-xl shadow-md transition";
+            } else if (diff === 'hard') {
+                btnHard.className = "diff-btn py-2 px-2 bg-red-900/80 border-2 border-red-500 text-red-300 font-bold text-xs rounded-xl shadow-md transition";
+            }
+        }
+
+        document.getElementById('btnDiffEasy').addEventListener('click', () => setDifficulty('easy'));
+        document.getElementById('btnDiffMedium').addEventListener('click', () => setDifficulty('medium'));
+        document.getElementById('btnDiffHard').addEventListener('click', () => setDifficulty('hard'));
+
+        class SmoothSnake {
+            constructor(isBot = false, name = "Bot", color = "#ff007f", skinId = "neon_pink") {
+                this.isBot = isBot;
+                this.name = name;
+                this.color = color;
+                this.skinId = skinId;
+                this.score = 10;
+                this.turnSpeed = 0.12;
+                this.reset();
+            }
+
+            reset() {
+                let startX, startY;
+                if (!this.isBot) {
+                    startX = WORLD_WIDTH / 2;
+                    startY = WORLD_HEIGHT / 2;
+                } else {
+                    do {
+                        startX = Math.random() * (WORLD_WIDTH - 200) + 100;
+                        startY = Math.random() * (WORLD_HEIGHT - 200) + 100;
+                    } while (Math.hypot(startX - WORLD_WIDTH / 2, startY - WORLD_HEIGHT / 2) < 450);
+                }
+
+                this.x = startX;
+                this.y = startY;
+                this.angle = Math.random() * Math.PI * 2;
+                this.targetAngle = this.angle;
+                
+                if (this.isBot) {
+                    if (selectedDifficulty === 'easy') {
+                        this.normalSpeed = 2.0;
+                        this.boostSpeed = 3.5;
+                        this.turnSpeed = 0.06;
+                    } else if (selectedDifficulty === 'medium') {
+                        this.normalSpeed = 3.0;
+                        this.boostSpeed = 5.0;
+                        this.turnSpeed = 0.12;
+                    } else {
+                        this.normalSpeed = 4.2;
+                        this.boostSpeed = 6.8;
+                        this.turnSpeed = 0.20;
+                    }
+                } else {
+                    this.normalSpeed = 3.2;
+                    this.boostSpeed = 5.5;
+                    this.turnSpeed = 0.12;
+                }
+
+                this.speed = this.normalSpeed;
+                this.radius = 12;
+                this.length = 15; 
+                this.segments = [];
+
+                for (let i = 0; i < this.length; i++) {
+                    this.segments.push({
+                        x: this.x - Math.cos(this.angle) * (i * 6),
+                        y: this.y - Math.sin(this.angle) * (i * 6)
+                    });
+                }
+                this.alive = true;
+                this.isBoosting = false;
+            }
+
+            update() {
+                if (!this.alive) return;
+
+                let angleDiff = Math.atan2(Math.sin(this.targetAngle - this.angle), Math.cos(this.targetAngle - this.angle));
+                this.angle += angleDiff * this.turnSpeed;
+
+                let currentSpd = (this.isBoosting && this.segments.length > 10) ? this.boostSpeed : this.normalSpeed;
+
+                this.x += Math.cos(this.angle) * currentSpd;
+                this.y += Math.sin(this.angle) * currentSpd;
+
+                // Morte ao atingir as bordas do mapa
+                if (this.x <= 0 || this.x >= WORLD_WIDTH || this.y <= 0 || this.y >= WORLD_HEIGHT) {
+                    if (!this.isBot) {
+                        endGame("Você colidiu com a borda do mapa!");
+                    } else {
+                        killBot(this);
+                    }
+                    return;
+                }
+
+                let targetDist = 6;
+                let leadX = this.x;
+                let leadY = this.y;
+
+                for (let i = 0; i < this.segments.length; i++) {
+                    let seg = this.segments[i];
+                    let dx = leadX - seg.x;
+                    let dy = leadY - seg.y;
+                    let dist = Math.hypot(dx, dy);
+                    if (dist > 0) {
+                        seg.x = leadX - (dx / dist) * targetDist;
+                        seg.y = leadY - (dy / dist) * targetDist;
+                    }
+                    leadX = seg.x;
+                    leadY = seg.y;
+                }
+
+                let targetSegments = Math.floor(15 + (this.isBot ? this.score || 10 : score) * 0.8);
+                while (this.segments.length < targetSegments) {
+                    let last = this.segments[this.segments.length - 1];
+                    this.segments.push({ x: last.x, y: last.y });
+                }
+                while (this.segments.length > targetSegments) {
+                    this.segments.pop();
+                }
+            }
+
+            draw() {
+                if (!this.alive) return;
+                let skinObj = skins.find(s => s.id === this.skinId) || skins[0];
+
+                for (let i = this.segments.length - 1; i >= 0; i--) {
+                    let seg = this.segments[i];
+                    let ratio = 1 - (i / this.segments.length) * 0.3;
+                    let segRadius = this.radius * ratio;
+
+                    ctx.save();
+                    let sx = seg.x - camera.x;
+                    let sy = seg.y - camera.y;
+
+                    if (skinObj.type === 'solid') {
+                        ctx.shadowBlur = 8;
+                        ctx.shadowColor = skinObj.color;
+                        ctx.fillStyle = skinObj.color;
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, segRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                    } 
+                    else if (skinObj.type === 'flag_bra') {
+                        ctx.shadowBlur = 6;
+                        ctx.shadowColor = skinObj.colors[0];
+                        ctx.fillStyle = skinObj.colors[0];
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, segRadius, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        if (i % 3 === 0) {
+                            ctx.fillStyle = skinObj.colors[1];
+                            ctx.beginPath();
+                            ctx.moveTo(sx, sy - segRadius * 0.75);
+                            ctx.lineTo(sx + segRadius * 0.75, sy);
+                            ctx.lineTo(sx, sy + segRadius * 0.75);
+                            ctx.lineTo(sx - segRadius * 0.75, sy);
+                            ctx.closePath();
+                            ctx.fill();
+
+                            ctx.fillStyle = skinObj.colors[2];
+                            ctx.beginPath();
+                            ctx.arc(sx, sy, segRadius * 0.38, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                    else if (skinObj.type === 'flag_usa') {
+                        let stripe = Math.floor((i / 2) % 2);
+                        let segColor = stripe === 0 ? skinObj.colors[0] : skinObj.colors[1];
+                        
+                        ctx.shadowBlur = 6;
+                        ctx.shadowColor = segColor;
+                        ctx.fillStyle = segColor;
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, segRadius, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        if (i < 5) {
+                            ctx.fillStyle = skinObj.colors[2];
+                            ctx.beginPath();
+                            ctx.arc(sx, sy, segRadius * 0.55, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                    else if (skinObj.type === 'flag_jpn') {
+                        ctx.shadowBlur = 6;
+                        ctx.shadowColor = skinObj.colors[0];
+                        ctx.fillStyle = skinObj.colors[0];
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, segRadius, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        if (i % 2 === 0) {
+                            ctx.fillStyle = skinObj.colors[1];
+                            ctx.beginPath();
+                            ctx.arc(sx, sy, segRadius * 0.52, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                    else if (skinObj.type === 'flag_ger') {
+                        let stripe = i % 3;
+                        let segColor = stripe === 0 ? skinObj.colors[0] : (stripe === 1 ? skinObj.colors[1] : skinObj.colors[2]);
+                        
+                        ctx.shadowBlur = 6;
+                        ctx.shadowColor = segColor;
+                        ctx.fillStyle = segColor;
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, segRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+
+                // Cabeça
+                let headColor = skinObj.headColor || skinObj.color || '#ffffff';
+                ctx.save();
+                ctx.shadowBlur = 14;
+                ctx.shadowColor = headColor;
+                ctx.fillStyle = headColor;
+                ctx.beginPath();
+                ctx.arc(this.x - camera.x, this.y - camera.y, this.radius + 1.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Olhos
+                ctx.fillStyle = '#090d16';
+                let eyeDist = this.radius * 0.6;
+                let eye1x = this.x - camera.x + Math.cos(this.angle + 0.6) * eyeDist;
+                let eye1y = this.y - camera.y + Math.sin(this.angle + 0.6) * eyeDist;
+                let eye2x = this.x - camera.x + Math.cos(this.angle - 0.6) * eyeDist;
+                let eye2y = this.y - camera.y + Math.sin(this.angle - 0.6) * eyeDist;
+
+                ctx.beginPath();
+                ctx.arc(eye1x, eye1y, 2.5, 0, Math.PI * 2);
+                ctx.arc(eye2x, eye2y, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                // Nome / Nick
+                ctx.save();
+                ctx.font = 'bold 12px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.fillText(this.name, this.x - camera.x + 1, this.y - camera.y - this.radius - 9);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(this.name, this.x - camera.x, this.y - camera.y - this.radius - 10);
+                ctx.restore();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = Math.random() * 4 + 1.5;
+                let angle = Math.random() * Math.PI * 2;
+                let speed = Math.random() * 3 + 1;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.03 + 0.02;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= this.decay;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x - camera.x, this.y - camera.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function spawnFood(count = 1) {
+            for (let i = 0; i < count; i++) {
+                let colors = ['#00ffcc', '#ff007f', '#ffd700', '#39ff14', '#9d00ff', '#00bfff'];
+                foods.push({
+                    x: Math.random() * (WORLD_WIDTH - 100) + 50,
+                    y: Math.random() * (WORLD_HEIGHT - 100) + 50,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    radius: Math.random() > 0.85 ? 4 : 2.5,
+                    value: Math.random() > 0.85 ? 2 : 1
+                });
+            }
+        }
+
+        function dropDeathFood(snake) {
+            let dropCount = Math.floor(snake.segments.length * 0.7);
+            for (let i = 0; i < dropCount; i++) {
+                let seg = snake.segments[i % snake.segments.length];
+                foods.push({
+                    x: seg.x + (Math.random() - 0.5) * 20,
+                    y: seg.y + (Math.random() - 0.5) * 20,
+                    color: snake.color,
+                    radius: 3.5,
+                    value: 2
+                });
+            }
+        }
+
+        function updateBotsAI() {
+            let allSnakes = [];
+            if (player && player.alive) allSnakes.push(player);
+            bots.forEach(b => { if (b.alive) allSnakes.push(b); });
+
+            bots.forEach(bot => {
+                if (!bot.alive) return;
+
+                let nearestRival = null;
+                let minDistToRival = Infinity;
+
+                allSnakes.forEach(other => {
+                    if (other === bot) return;
+                    let dist = Math.hypot(other.x - bot.x, other.y - bot.y);
+                    if (dist < minDistToRival) {
+                        minDistToRival = dist;
+                        nearestRival = other;
+                    }
+                });
+
+                if (selectedDifficulty === 'easy') {
+                    if (nearestRival && minDistToRival < 200) {
+                        bot.targetAngle = Math.atan2(bot.y - nearestRival.y, bot.x - nearestRival.x);
+                        bot.isBoosting = false;
+                        return;
+                    }
+                } else if (selectedDifficulty === 'hard') {
+                    if (nearestRival && minDistToRival < 450) {
+                        let interceptX = nearestRival.x + Math.cos(nearestRival.angle) * 40;
+                        let interceptY = nearestRival.y + Math.sin(nearestRival.angle) * 40;
+                        bot.targetAngle = Math.atan2(interceptY - bot.y, interceptX - bot.x);
+                        bot.isBoosting = minDistToRival < 250;
+                        return;
+                    }
+                } else {
+                    if (nearestRival && minDistToRival < 300 && Math.random() < 0.6) {
+                        bot.targetAngle = Math.atan2(nearestRival.y - bot.y, nearestRival.x - bot.x);
+                        bot.isBoosting = Math.random() < 0.25;
+                        return;
+                    }
+                }
+
+                bot.isBoosting = false;
+
+                let targetFood = null;
+                let minFoodDist = Infinity;
+                foods.forEach(f => {
+                    let d = Math.hypot(f.x - bot.x, f.y - bot.y);
+                    if (d < minFoodDist) {
+                        minFoodDist = d;
+                        targetFood = f;
+                    }
+                });
+
+                if (targetFood && minFoodDist < 300) {
+                    bot.targetAngle = Math.atan2(targetFood.y - bot.y, targetFood.x - bot.x);
+                } else if (Math.random() < 0.03) {
+                    bot.targetAngle += (Math.random() - 0.5) * 1.5;
+                }
+            });
+        }
+
+        function killBot(bot) {
+            bot.alive = false;
+            dropDeathFood(bot);
+            setTimeout(() => {
+                bot.reset();
+            }, 3000);
+        }
+
+        function drawGrid() {
+            ctx.save();
+            ctx.strokeStyle = '#121d33';
+            ctx.lineWidth = 1;
+            let gridSize = 40;
+            let startX = - (camera.x % gridSize);
+            let startY = - (camera.y % gridSize);
+
+            for (let x = startX; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = startY; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Desenhar bordas do mapa
+            ctx.strokeStyle = '#ff007f';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(-camera.x, -camera.y, WORLD_WIDTH, WORLD_HEIGHT);
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            if (!gameRunning || gamePaused) return;
+
+            if (player && player.alive) {
+                let dx = mousePos.x - (canvas.width / 2);
+                let dy = mousePos.y - (canvas.height / 2);
+                if (Math.hypot(dx, dy) > 10) {
+                    player.targetAngle = Math.atan2(dy, dx);
+                }
+                player.isBoosting = keysPressed['Space'] || isMouseDown || isTouchBoosting;
+                player.update();
+
+                camera.x += (player.x - canvas.width / 2 - camera.x) * 0.1;
+                camera.y += (player.y - canvas.height / 2 - camera.y) * 0.1;
+            }
+
+            bots.forEach(b => { b.update(); });
+            updateBotsAI();
+
+            [player, ...bots].forEach(snake => {
+                if (!snake.alive) return;
+                let head = snake;
+
+                foods.forEach((f, fIdx) => {
+                    let dist = Math.hypot(f.x - head.x, f.y - head.y);
+                    if (dist < head.radius + f.radius) {
+                        foods.splice(fIdx, 1);
+                        
+                        if (Math.random() < 0.37) {
+                            spawnFood(1);
+                        }
+
+                        for (let p = 0; p < 4; p++) {
+                            particles.push(new Particle(f.x, f.y, f.color));
+                        }
+
+                        if (snake === player) {
+                            score += f.value;
+                            foodEatenCount++;
+                            document.getElementById('currentScore').innerText = score;
+                        } else {
+                            snake.score = (snake.score || 10) + f.value;
+                        }
+                    }
+                });
+            });
+
+            let allSnakes = [player, ...bots];
+            allSnakes.forEach(snake => {
+                if (!snake.alive) return;
+                let head = snake;
+
+                allSnakes.forEach(other => {
+                    if (!other.alive) return;
+                    
+                    // Permite atravessar o próprio corpo sem morrer
+                    if (other === snake) return;
+
+                    for (let i = 0; i < other.segments.length; i++) {
+                        let seg = other.segments[i];
+                        let dist = Math.hypot(head.x - seg.x, head.y - seg.y);
+                        if (dist < head.radius + 4) {
+                            if (snake === player) {
+                                endGame(`Sua cabeça colidiu com a cobra de ${other.name}!`);
+                            } else {
+                                killBot(snake);
+                            }
+                        }
+                    }
+                });
+            });
+
+            particles.forEach((p, idx) => {
+                p.update();
+                if (p.alpha <= 0) particles.splice(idx, 1);
+            });
+
+            let aliveCount = bots.filter(b => b.alive).length + (player && player.alive ? 1 : 0);
+            document.getElementById('aliveBots').innerText = aliveCount;
+
+            render();
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+
+            foods.forEach(f => {
+                ctx.save();
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = f.color;
+                ctx.fillStyle = f.color;
+                ctx.beginPath();
+                ctx.arc(f.x - camera.x, f.y - camera.y, f.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            particles.forEach(p => p.draw());
+
+            bots.forEach(b => b.draw());
+            if (player) player.draw();
+        }
+
+        function startGame() {
+            playerNickname = document.getElementById('playerNickInput').value.trim() || 'Player';
+            localStorage.setItem('snake_slither_nick', playerNickname);
+
+            score = 10;
+            foodEatenCount = 0;
+            document.getElementById('currentScore').innerText = score;
+
+            let diffText = selectedDifficulty === 'easy' ? 'FÁCIL' : (selectedDifficulty === 'medium' ? 'MÉDIO' : 'DIFÍCIL');
+            document.getElementById('hudDifficulty').innerText = diffText;
+
+            player = new SmoothSnake(false, playerNickname, '#00ffcc', currentSkinId);
+            
+            bots = [];
+            for (let i = 0; i < 6; i++) {
+                let name = botNames[i % botNames.length];
+                let randomSkin = skins[Math.floor(Math.random() * skins.length)].id;
+                bots.push(new SmoothSnake(true, name, '#ff007f', randomSkin));
+            }
+
+            foods = [];
+            spawnFood(74);
+            particles = [];
+
+            gameRunning = true;
+            gamePaused = false;
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('inGameHud').classList.remove('hidden');
+
+            // Exibe botões mobile
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                document.getElementById('mobileBoostBtn').classList.remove('hidden');
+                document.getElementById('joystickZone').classList.remove('hidden');
+            }
+
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(gameLoop, 1000 / 60);
+        }
+
+        function endGame(reason) {
+            gameRunning = false;
+            clearInterval(gameInterval);
+
+            if (player) {
+                player.alive = false;
+                dropDeathFood(player);
+            }
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('snake_slither_highscore', highScore);
+                document.getElementById('headerHighScore').innerText = highScore;
+            }
+
+            let earnedCoins = Math.floor(score / 2);
+            coins += earnedCoins;
+            localStorage.setItem('snake_slither_coins', coins);
+            document.getElementById('playerCoins').innerText = coins;
+
+            document.getElementById('gameOverReason').innerText = reason;
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('finalFood').innerText = foodEatenCount;
+
+            document.getElementById('inGameHud').classList.add('hidden');
+            document.getElementById('mobileBoostBtn').classList.add('hidden');
+            document.getElementById('joystickZone').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+
+        function pauseGame() {
+            if (!gameRunning) return;
+            gamePaused = true;
+            document.getElementById('pauseModal').classList.remove('hidden');
+        }
+
+        function resumeGame() {
+            gamePaused = false;
+            document.getElementById('pauseModal').classList.add('hidden');
+        }
+
+        function returnToMenu() {
+            gameRunning = false;
+            gamePaused = false;
+            clearInterval(gameInterval);
+            document.getElementById('pauseModal').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('inGameHud').classList.add('hidden');
+            document.getElementById('mobileBoostBtn').classList.add('hidden');
+            document.getElementById('joystickZone').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            if (id === 'shopModal') renderSkinsShop();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function updateNicknameFromShop(val) {
+            playerNickname = val.trim() || 'Player';
+            document.getElementById('playerNickInput').value = playerNickname;
+            localStorage.setItem('snake_slither_nick', playerNickname);
+        }
+
+        function renderSkinsShop() {
+            const grid = document.getElementById('skinsGrid');
+            grid.innerHTML = '';
+
+            skins.forEach(s => {
+                const card = document.createElement('div');
+                card.className = `bg-gray-900 border ${s.id === currentSkinId ? 'border-neonGreen' : 'border-gray-800'} rounded-xl p-3 flex flex-col items-center justify-between text-center`;
+
+                let statusBtn = '';
+                if (s.id === currentSkinId) {
+                    statusBtn = `<span class="text-[10px] bg-neonGreen/20 text-neonGreen font-bold px-2 py-1 rounded-lg">Equipado</span>`;
+                } else if (s.unlocked) {
+                    statusBtn = `<button onclick="equipSkin('${s.id}')" class="text-[10px] bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 py-1 rounded-lg transition">Equipar</button>`;
+                } else {
+                    statusBtn = `<button onclick="buySkin('${s.id}')" class="text-[10px] bg-yellow-500 hover:bg-yellow-400 text-darkBg font-extrabold px-3 py-1 rounded-lg transition flex items-center space-x-1"><i class="fa-solid fa-star"></i> <span>${s.price}</span></button>`;
+                }
+
+                card.innerHTML = `
+                    <div class="font-bold text-xs mb-2 text-white">${s.name}</div>
+                    <div class="w-8 h-8 rounded-full mb-3 shadow-md" style="background-color: ${s.color || (s.colors ? s.colors[0] : '#ffffff')}"></div>
+                    ${statusBtn}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function equipSkin(id) {
+            currentSkinId = id;
+            localStorage.setItem('snake_slither_skin', id);
+            renderSkinsShop();
+        }
+
+        function buySkin(id) {
+            const skin = skins.find(s => s.id === id);
+            if (skin && coins >= skin.price) {
+                coins -= skin.price;
+                skin.unlocked = true;
+                localStorage.setItem('snake_slither_coins', coins);
+                document.getElementById('playerCoins').innerText = coins;
+
+                const unlockedList = skins.filter(s => s.unlocked).map(s => s.id);
+                localStorage.setItem('snake_slither_unlocked', JSON.stringify(unlockedList));
+
+                equipSkin(id);
+            }
+        }
+
+        // --- SISTEMA DE CONTROLES OTIMIZADO PARA MOBILE ---
+
+        function handlePointerMove(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            mousePos.x = (clientX - rect.left) * (canvas.width / rect.width);
+            mousePos.y = (clientY - rect.top) * (canvas.height / rect.height);
+        }
+
+        window.addEventListener('mousemove', e => {
+            handlePointerMove(e.clientX, e.clientY);
+        });
+
+        // Touch Direto no Canvas
+        canvas.addEventListener('touchstart', e => {
+            if (e.touches.length > 0) {
+                handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('touchmove', e => {
+            if (e.touches.length > 0) {
+                handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+
+        // Lógica do Joystick Virtual Mobile
+        const joystickZone = document.getElementById('joystickZone');
+        const joystickKnob = document.getElementById('joystickKnob');
+
+        joystickZone.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = joystickZone.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            let dx = touch.clientX - centerX;
+            let dy = touch.clientY - centerY;
+            let dist = Math.hypot(dx, dy);
+            let maxRadius = rect.width / 2 - 10;
+
+            if (dist > maxRadius) {
+                dx = (dx / dist) * maxRadius;
+                dy = (dy / dist) * maxRadius;
+            }
+
+            joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+
+            // Atualiza direção da cobra com base no Joystick
+            mousePos.x = (canvas.width / 2) + dx * 5;
+            mousePos.y = (canvas.height / 2) + dy * 5;
+        }, { passive: false });
+
+        joystickZone.addEventListener('touchend', () => {
+            joystickKnob.style.transform = `translate(0px, 0px)`;
+        });
+
+        // Botão de Boost Mobile
+        const mobileBoostBtn = document.getElementById('mobileBoostBtn');
+        mobileBoostBtn.addEventListener('touchstart', e => {
+            e.preventDefault();
+            isTouchBoosting = true;
+        }, { passive: false });
+
+        mobileBoostBtn.addEventListener('touchend', e => {
+            e.preventDefault();
+            isTouchBoosting = false;
+        }, { passive: false });
+
+        window.addEventListener('mousedown', () => { isMouseDown = true; });
+        window.addEventListener('mouseup', () => { isMouseDown = false; });
+
+        window.addEventListener('keydown', e => { keysPressed[e.code] = true; });
+        window.addEventListener('keyup', e => { keysPressed[e.code] = false; });
+    </script>
+</body>
+</html>
